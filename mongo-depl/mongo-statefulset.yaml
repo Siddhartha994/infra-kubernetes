@@ -1,0 +1,64 @@
+# mongo-deployment // use type statefulSet for persistence
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  labels:
+    app: mongodb
+spec:
+  serviceName: "mongo"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+
+  template:
+    metadata:
+      labels:
+        app: mongodb
+        selector: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:5.0.16
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+          - name: pvc
+            mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        # env:
+        # - name: MONGO_INITDB_ROOT_USERNAME
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: mongo-secret
+        #       key: mongo-user
+        # - name: MONGO_INITDB_ROOT_PASSWORD
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: mongo-secret
+#         #       key: mongo-password
+---
+# # service file for mongo
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  labels:
+    app: mongodb
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb
+  ports:
+    - port: 80
+      targetPort: 27017
